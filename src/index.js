@@ -1,34 +1,52 @@
-import {createStore} from "redux";
+import { createStore } from "redux";
 
-const plus = document.getElementById("add-btn");
-const minus = document.getElementById("minus-btn");
-const number = document.querySelector("span");
+const form = document.querySelector("form");
+const input = document.querySelector("input");
+const ul = document.querySelector("ul");
 
-const countModifier = (count = 0, action) => {
-  if(action.type === "ADD") {
-    return count + 1;
+const ADD = "ADD";
+const DEL = "DEL";
+
+const modifyToDoList = (toDoList = [], action) => {
+  switch(action.type) {
+    case ADD:
+      return [...toDoList, { toDo: action.toDo, id: Date.now() }];
+    case DEL:
+      return toDoList.filter(toDo => toDo.id !== action.id);
+    default:
+      return toDoList;
   }
-  else if(action.type === "MINUS") {
-    return count - 1;
-  }
-  return count;
-};
+}
 
-const countStore = createStore(countModifier);
+const toDoListStore = createStore(modifyToDoList)
 
 const onChange = () => {
-  console.log("there was a change on the store!")
+  const toDos = toDoListStore.getState();
+  ul.innerHTML = "";
+  toDos.forEach(toDosElement => {
+    const li = document.createElement("li");
+    const del_btn = document.createElement("button");
+    del_btn.innerText = "삭제";
+    li.id = toDosElement.id;
+    li.innerText = toDosElement.toDo;
+    del_btn.addEventListener("click", deleteToDo);
+    li.appendChild(del_btn);
+    ul.appendChild(li);
+  });
 }
-countStore.subscribe(onChange);
 
-
-const handleAdd = () => {
-  countStore.dispatch({type: "ADD"});
+const deleteToDo = e => {
+  const toDoId = e.target.parentNode.id;
+  toDoListStore.dispatch({ type: DEL, id: parseInt(toDoId) });
 }
 
-const handleMinus = () => {
-  countStore.dispatch({type: "MINUS"});
+toDoListStore.subscribe(onChange);
+
+const addList = e => {
+  e.preventDefault();
+  const toDo = input.value;
+  toDoListStore.dispatch({ type: ADD, toDo: toDo });
+  input.value = "";
 }
 
-plus.addEventListener("click", () => handleAdd);
-minus.addEventListener("click", () => handleMinus);
+form.addEventListener("submit", addList);
